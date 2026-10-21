@@ -2,6 +2,7 @@ name = "evie-salomon-soluna-playbook"
 pages_build_output_dir = "."
 compatibility_date = "2026-10-01"
 
-[[kv_namespaces]]
-binding = "EDITS"
-id = "46c030582b664eb3b98479492a77563a"
+[[d1_databases]]
+binding = "DB"
+database_name = "playbook-edits"
+database_id = "cff95813-b569-4305-bd7b-a6b5f9953f91"
