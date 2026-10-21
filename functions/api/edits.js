@@ -1,9 +1,11 @@
-// Shared text edits for the playbook. Needs a KV binding EDITS and a secret EDIT_KEY in Cloudflare Pages settings.
+// Shared text edits for the playbook. Needs a KV binding named EDITS in Cloudflare Pages settings.
+const KEY_SHA256="f320f4c463ba09ada4ab95372423d734e8b66c467c26bb15f835b7466a16d8d1";
+async function sha(t){ const d=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(t||"")); return [...new Uint8Array(d)].map(b=>b.toString(16).padStart(2,"0")).join(""); }
 const J=(o,s=200)=>new Response(JSON.stringify(o),{status:s,headers:{"content-type":"application/json","cache-control":"no-store"}});
 async function load(env){ const t=await env.EDITS.get("edits"); return t?JSON.parse(t):{}; }
 export async function onRequest({request,env}){
-  if(!env.EDITS||!env.EDIT_KEY) return J({error:"not configured"},503);
-  if(request.headers.get("x-pb-key")!==env.EDIT_KEY) return J({error:"forbidden"},403);
+  if(!env.EDITS) return J({error:"not configured"},503);
+  if(await sha(request.headers.get("x-pb-key"))!==KEY_SHA256) return J({error:"forbidden"},403);
   if(request.method==="GET") return J(await load(env));
   if(request.method==="POST"){
     let b; try{ b=await request.json(); }catch(e){ return J({error:"bad json"},400); }
