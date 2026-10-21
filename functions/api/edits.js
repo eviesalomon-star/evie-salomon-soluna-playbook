@@ -1,11 +1,13 @@
 // Shared text edits for the playbook, stored in the D1 database bound as DB (see wrangler.toml).
 const KEY_SHA256="f320f4c463ba09ada4ab95372423d734e8b66c467c26bb15f835b7466a16d8d1";
 async function sha(t){ const d=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(t||"")); return [...new Uint8Array(d)].map(b=>b.toString(16).padStart(2,"0")).join(""); }
-const J=(o,s=200)=>new Response(JSON.stringify(o),{status:s,headers:{"content-type":"application/json","cache-control":"no-store"}});
+const CORS={"access-control-allow-origin":"*","access-control-allow-headers":"content-type,x-pb-key","access-control-allow-methods":"GET,POST,OPTIONS"};
+const J=(o,s=200)=>new Response(JSON.stringify(o),{status:s,headers:{"content-type":"application/json","cache-control":"no-store",...CORS}});
 async function init(env){ await env.DB.prepare("CREATE TABLE IF NOT EXISTS kv (k TEXT PRIMARY KEY, v TEXT)").run(); }
 async function load(env){ const r=await env.DB.prepare("SELECT v FROM kv WHERE k='edits'").first(); return r?JSON.parse(r.v):{}; }
 async function store(env,o){ await env.DB.prepare("INSERT INTO kv (k,v) VALUES ('edits',?1) ON CONFLICT(k) DO UPDATE SET v=excluded.v").bind(JSON.stringify(o)).run(); }
 export async function onRequest({request,env}){
+  if(request.method==="OPTIONS") return new Response(null,{status:204,headers:CORS});
   if(!env.DB) return J({error:"not configured"},503);
   if(await sha(request.headers.get("x-pb-key"))!==KEY_SHA256) return J({error:"forbidden"},403);
   await init(env);
