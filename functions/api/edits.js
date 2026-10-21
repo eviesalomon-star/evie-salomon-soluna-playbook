@@ -13,13 +13,15 @@ export async function onRequest({request,env}){
   await init(env);
   const og=request.headers.get("origin")||"(same-site)"; await env.DB.prepare("INSERT INTO seen (origin,n,last) VALUES (?1,1,?2) ON CONFLICT(origin) DO UPDATE SET n=n+1,last=?2").bind(og.slice(0,200),Date.now()).run();
   if(new URL(request.url).searchParams.get("seen")) return J((await env.DB.prepare("SELECT * FROM seen").all()).results);
-  if(new URL(request.url).searchParams.get("k")==="base") return J(await load(env,"base"));
+  const K=new URL(request.url).searchParams.get("k"); if(request.method==="GET"&&(K==="base"||K==="moves")) return J(await load(env,K));
   if(request.method==="GET") return J(await load(env));
   if(request.method==="POST"){
     let b; try{ b=await request.json(); }catch(e){ return J({error:"bad json"},400); }
     const all=await load(env);
     if(b.replaceAll){ await store(env,b.replaceAll); if(b.base) await store(env,b.base,"base"); return J({ok:true}); }
-    if(b.reset){ await store(env,{}); return J({ok:true}); }
+    if(b.reset){ await store(env,{}); await store(env,{},"moves"); return J({ok:true}); }
+    if(b.move){ const {view,path,order,sig}=b; if(typeof view!=="string"||!/^p(_\d+)*$/.test(String(path))||!Array.isArray(order)) return J({error:"bad move"},400);
+      const mv=await load(env,"moves"); mv[view]=mv[view]||{}; mv[view][path]={order:order.slice(0,1000).map(Number),sig:String(sig).slice(0,100),t:Date.now()}; await store(env,mv,"moves"); return J({ok:true}); }
     const {view,i,o,n,del}=b||{}; if(typeof view!=="string"||!/^\d+$/.test(String(i))) return J({error:"bad edit"},400);
     all[view]=all[view]||{};
     if(del||n===o) delete all[view][i]; else all[view][i]={o:String(o).slice(0,5000),n:String(n).slice(0,5000),t:Date.now()};
