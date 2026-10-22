@@ -21,7 +21,7 @@ export async function onRequest({request,env}){
     if(b.replaceAll){ await store(env,b.replaceAll); if(b.base) await store(env,b.base,"base"); return J({ok:true}); }
     if(b.reset){ await store(env,{}); await store(env,{},"moves"); return J({ok:true}); }
     if(b.move){ const {view,path,order,sig}=b; if(typeof view!=="string"||!/^p(_\d+)*$/.test(String(path))||!Array.isArray(order)) return J({error:"bad move"},400);
-      const mv=await load(env,"moves"); mv[view]=mv[view]||{}; mv[view][path]={order:order.slice(0,1000).map(Number),sig:String(sig).slice(0,100),hide:Array.isArray(b.hide)?b.hide.slice(0,1000).map(Number):[],t:Date.now()}; await store(env,mv,"moves"); return J({ok:true}); }
+      const mv=await load(env,"moves"); mv[view]=mv[view]||{}; mv[view][path]={order:order.slice(0,1000).map(Number),sig:String(sig).slice(0,100),hide:Array.isArray(b.hide)?b.hide.slice(0,1000).map(Number):[],hideT:Array.isArray(b.hideT)?b.hideT.slice(0,200).map(x=>String(x).slice(0,240)):[],t:Date.now()}; await store(env,mv,"moves"); return J({ok:true}); }
     const {view,i,o,n,del}=b||{}; if(typeof view!=="string"||!/^\d+$/.test(String(i))) return J({error:"bad edit"},400);
     all[view]=all[view]||{};
     if(del||n===o) delete all[view][i]; else all[view][i]={o:String(o).slice(0,5000),n:String(n).slice(0,5000),t:Date.now()};
