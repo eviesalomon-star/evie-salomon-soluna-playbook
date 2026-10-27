@@ -1,2 +1,6 @@
 /version.json
   Cache-Control: no-store
+/v2/version.json
+  Cache-Control: no-store
+/v2/data.enc
+  Cache-Control: no-store
